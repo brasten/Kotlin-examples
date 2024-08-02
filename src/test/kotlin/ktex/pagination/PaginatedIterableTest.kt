@@ -34,8 +34,17 @@ class PaginatedIterableTest {
     }
 
     @Test
+    fun `basic iterable`() {
+        val vehiclesIter = PaginatedIterable<Vehicle>(buildPageFetcher(paginatedService))
+
+        val vehicleList = vehiclesIter.toList()
+
+        assertEquals(194232, vehicleList.size)
+    }
+
+    @Test
     fun `paginates as needed to collect values`() {
-        val seq = PaginatedIterable<Vehicle>(buildPageFetcher(paginatedService)).toSequence()
+        val seq = PaginatedIterable<Vehicle>(buildPageFetcher(paginatedService)).asSequence()
 
         val vehicleChunks =
             seq.chunked(150)
@@ -60,7 +69,7 @@ class PaginatedIterableTest {
         val dataStore = dataStoreFromResource()
             .take(4000)
             .toList()
-        val seq = PaginatedIterable<Vehicle>(buildPageFetcher(PaginatedService(dataStore))).toSequence()
+        val seq = PaginatedIterable<Vehicle>(buildPageFetcher(PaginatedService(dataStore))).asSequence()
 
         val vehicleChunks =
             seq.chunked(1500)
@@ -71,11 +80,6 @@ class PaginatedIterableTest {
         assertEquals(1500, vehicleChunks[0].size)
         assertEquals(1500, vehicleChunks[1].size)
         assertEquals(1000, vehicleChunks[2].size)
-    }
-
-    @Nested
-    inner class AsIterable {
-
     }
 
     /**
@@ -90,7 +94,7 @@ class PaginatedIterableTest {
                 val result = ext.getVehicles(pageToken?.toString())
 
                 PaginatedIterable.Page(result.data, result.nextPageToken as Object)
-            }).toSequence()
+            }).asSequence()
     }
     val service = TestService("JTMFB3FV6M")
 
@@ -208,7 +212,7 @@ class PaginatedIterableTest {
 
         @Test
         fun `sample sequencer using web service`() {
-            val vehicles = PaginatedIterable<Vehicle>(webServiceFetcher).toSequence()
+            val vehicles = PaginatedIterable<Vehicle>(webServiceFetcher).asSequence()
 
             val vehicleList = vehicles.take(500).toList()
             assertEquals(500, vehicleList.size)

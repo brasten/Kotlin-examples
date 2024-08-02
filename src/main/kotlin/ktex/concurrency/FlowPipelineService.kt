@@ -3,7 +3,10 @@ package ktex.concurrency
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 
 fun delayedRequest(value: String): String {
     Thread.sleep(1000L)
@@ -22,7 +25,7 @@ class FlowPipelineService {
      * We COULD just use something like `GlobalScope`, but that's not recommended as it could leak memory.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun doAction(
+    suspend fun doChannelsConsumedAsFlow(
         scope: CoroutineScope,
         eventLog: EventLogCollector? = null,
     ): Flow<String> {
@@ -58,6 +61,14 @@ class FlowPipelineService {
         println("Responses to consume as flow ...")
 
         return responses.consumeAsFlow()
+    }
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun doFlowThings(
+        eventLog: EventLogCollector? = null,
+    ): Flow<String> {
+        return List(1000) { it.toString() }.asFlow()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

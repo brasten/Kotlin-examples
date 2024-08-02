@@ -1,26 +1,20 @@
 package ktex.pagination
 
-/**
- * Converts a function for retrieving pages of data into an Iterable.
- */
 class PaginatedIterable<T>(
     val pageFetcher: Fetcher<T>,
-) {
-
-    fun toSequence(): Sequence<T> {
+): Iterable<T> {
+    override fun iterator(): Iterator<T> = iterator<T> {
         var pageToken: Object? = null
 
-        return sequence {
-            do {
-                val fetchedPage = pageFetcher.fetch(pageToken)
-                if (pageToken == fetchedPage.nextPageToken) {
-                    pageToken = null
-                } else {
-                    pageToken = fetchedPage.nextPageToken
-                    yieldAll(fetchedPage.page)
-                }
-            } while (pageToken != null)
-        }
+        do {
+            val fetchedPage = pageFetcher.fetch(pageToken)
+            if (pageToken == fetchedPage.nextPageToken) {
+                pageToken = null
+            } else {
+                pageToken = fetchedPage.nextPageToken
+                yieldAll(fetchedPage.page)
+            }
+        } while (pageToken != null)
     }
 
     fun interface Fetcher<T> {

@@ -8,33 +8,38 @@ import kotlinx.coroutines.flow.consumeAsFlow
 
 class FanOutInService {
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun doAction(scope: CoroutineScope, count: Int = 500): Flow<String> {
-        val eventCollector = EventLogCollector()
-
+    fun doAction(
+        scope: CoroutineScope,
+        count: Int = 500,
+        eventLog: EventLogCollector
+    ): Flow<String> {
         val report_CH = Channel<String>(100)
 
         val producer = scope.produce {
             (0..<count).forEach {
-                println("Produce ${it}")
+                eventLog.channelSend("producer", it.toString())
                 send(it)
             }
         }
 
-        val jobs = (0..<10).map {
+        val workers = (0..<10).map { jobId ->
             scope.async {
                 for (num in producer) {
-                    val report = "Worker ${it} - num ${num}"
+                    eventLog.channelReceive("producer", num.toString(), workerId = jobId.toString(), taskId = num.toString())
+                    val report = "Worker ${jobId} - num ${num}"
                     report_CH.send(report)
-                    println("Report -> ${report}")
+                    eventLog.channelSend("report", report, workerId = jobId.toString(), taskId = num.toString())
                 }
             }
         }
 
         scope.launch {
-            println("CLOSE WATCHER launched")
-            jobs.awaitAll()
+            eventLog.workerStarted("closer")
+            eventLog.taskStarted("await workers", workerId = "closer")
+            workers.awaitAll()
+            eventLog.taskCompleted("await workers", workerId = "closer")
             report_CH.close()
-            println("CLOSE WATCHER completed")
+            eventLog.workerCompleted("closer")
         }
 
         return report_CH.consumeAsFlow()

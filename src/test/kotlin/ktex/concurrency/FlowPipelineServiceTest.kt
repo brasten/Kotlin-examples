@@ -1,23 +1,29 @@
 package ktex.concurrency
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newCoroutineContext
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import kotlin.test.Ignore
 
 class FlowPipelineServiceTest {
 
     @Test
-    @Ignore
     fun `testing parallel flows`(): Unit = runTest {
-        println("Building Event Log Collector")
         val eventLog = EventLogCollector()
-        println("... starting")
         eventLog.startCollector()
-        println("... doAction")
 
         val service = FlowPipelineService()
 
-        val results = service.doAction(this, eventLog)
+        val results = service.doChannelsConsumedAsFlow(this, eventLog)
         println("Got results!")
         val data = mutableListOf<String>()
         results.collect {
@@ -27,5 +33,33 @@ class FlowPipelineServiceTest {
 
         ResultsWithLog(data, eventLog.receiveEvents())
             .printRunDiagram()
+    }
+
+    @Nested
+    inner class DoFlowThings {
+        @Test
+        fun `basic flow`(): Unit = runTest {
+            val eventLog = EventLogCollector()
+            eventLog.startCollector()
+
+            val ch = Channel<String>()
+            val chReceiver = async {
+                for (msg in ch) {
+                    println("MSG: $msg")
+                }
+            }
+
+            println("FlowPipelineService()")
+            val service = FlowPipelineService()
+            val flow = service.doFlowThings(eventLog)
+            println("got flow")
+            flow
+                .flowOn(Dispatchers.Default)
+                .collect { println("ch.send(${it})"); ch.send(it) }
+            println("collected.")
+            ch.close()
+
+//            chReceiver.await()
+        }
     }
 }

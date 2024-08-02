@@ -12,9 +12,11 @@ class FanOutInServiceTest {
     @Test
     fun `testing parallel flows`(): Unit = runTest {
         val service = FanOutInService()
-
-        val flow = service.doAction(this)
+        val eventLog = EventLogCollector().apply{ startCollector() }
+        val flow = service.doAction(this, eventLog = eventLog)
         val results = flow.toList()
+
+        eventLog.receiveEvents().printLog()
 
         assertEquals(500, results.size)
     }
@@ -22,14 +24,18 @@ class FanOutInServiceTest {
     @Test
     fun `testing parallel flows with test scope`(): Unit = runTest {
         val service = FanOutInService()
+        val eventLog = EventLogCollector().apply{ startCollector() }
 
-        coroutineScope {
-            val flow = service.doAction(this)
-            println("Flow received!")
+        val results = coroutineScope {
+            eventLog.operationStarted()
+            val flow = service.doAction(this, eventLog = eventLog)
+            eventLog.operationInfo("received flow")
             val results = flow.toList()
-            println("Got results!")
-
-            assertEquals(500, results.size)
+            eventLog.operationInfo("received flow contents")
+            eventLog.operationCompleted()
+            results
         }
+        assertEquals(500, results.size)
+        eventLog.receiveEvents().printLog()
     }
 }
