@@ -10,3 +10,7 @@ the relevant scenarios.
 
 ### Concurrency / Coroutines / etc ###
 In particular, parallel fan-out/fan-in techniques and their gotchas.  
+
+### Pagination ###
+
+[Documentation](src/main/kotlin/ktex/pagination/README.md)

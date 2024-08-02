@@ -4,7 +4,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import me.brasten.ktex.concurrency.EventLogCollector
 
 fun delayedRequest(value: String): String {
     Thread.sleep(1000L)

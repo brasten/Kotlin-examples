@@ -5,7 +5,7 @@ plugins {
     id("org.jetbrains.kotlinx.dataframe") version "0.13.1"
 }
 
-group = "me.brasten"
+group = "ktex"
 version = "1.0-SNAPSHOT"
 
 repositories {

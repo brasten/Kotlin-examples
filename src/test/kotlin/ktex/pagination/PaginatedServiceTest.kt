@@ -16,7 +16,7 @@ class PaginatedServiceTest {
     fun `without pageToken - returns first page`() {
         val result = service.getVehicles()
 
-        assertEquals(100, result.data.size)
+        assertEquals(PAGE_SIZE, result.data.size)
         assertNotNull(result.nextPageToken)
     }
 

@@ -19,7 +19,7 @@ data class Vehicle(
 )
 // VIN (1-10),County,City,State,Postal Code,Model Year,Make,Model,Electric Vehicle Type,Clean Alternative Fuel Vehicle (CAFV) Eligibility,Electric Range,Base MSRP,Legislative District,DOL Vehicle ID,Vehicle Location,Electric Utility,2020 Census Tract
 
-const val PAGE_SIZE = 7
+const val PAGE_SIZE = 1000
 
 fun dataStoreFromResource(): List<Vehicle> {
     val csvUri = PaginatedService::class.java.getResource("/Electric_Vehicle_Population_Data.csv")
@@ -43,6 +43,7 @@ val defaultDataStore = dataStoreFromResource()
 class PaginatedService(
     val dataStore: List<Vehicle> = defaultDataStore,
     val pageSize: Int = PAGE_SIZE,
+    val poisonPillVin: String? = null,
 ) {
     fun getVehicles(
         pageToken: String? = null
@@ -51,14 +52,19 @@ class PaginatedService(
         val cursor = index + 1
 
         val page = dataStore.subList(cursor, minOf(dataStore.size, cursor + pageSize))
+        println("Cursor: ${cursor}")
+        println("getVehicles() Page Size: ${page.size}")
+
         // NOTE: We're putting a poison pill in here about 660 records into the data. This should demonstrate
         // if callers iterate further than we're expecting.
         //
-        page.forEach { check(it.vin != "JTMFB3FV6M") }
+        if (poisonPillVin != null) {
+            page.forEach { check(it.vin != poisonPillVin) }
+        }
 
         return GetVehicleResponse(
             data = page,
-            nextPageToken = page.lastOrNull()?.vehicleId?.toString() ?: pageToken,
+            nextPageToken = page.lastOrNull()?.vehicleId?.toString() ?: null,
         )
     }
 

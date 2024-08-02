@@ -5,10 +5,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import me.brasten.ktex.concurrency.EventLogCollector
 
 class FanOutInService {
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun doAction(scope: CoroutineScope, count: Int = 500): Flow<String> {
         val eventCollector = EventLogCollector()
 

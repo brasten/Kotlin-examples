@@ -21,21 +21,21 @@ import kotlin.test.assertEquals
 
 @Execution(ExecutionMode.CONCURRENT)
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
-class SequencerTest {
+class PaginatedIterableTest {
     val paginatedService = PaginatedService()
 
-    fun buildPageFetcher(svc: PaginatedService = paginatedService) = PageFetcher<Vehicle> { pageToken ->
+    fun buildPageFetcher(svc: PaginatedService = paginatedService) = PaginatedIterable.Fetcher<Vehicle> { pageToken ->
         val res = svc.getVehicles(pageToken?.toString())
 
-        SequencePage(
+        PaginatedIterable.Page(
             res.data,
-            nextPageToken = res.nextPageToken as Object
+            nextPageToken = res.nextPageToken as? Object
         )
     }
 
     @Test
     fun `paginates as needed to collect values`() {
-        val seq = Sequencer<Vehicle>(buildPageFetcher(paginatedService)).toSequence()
+        val seq = PaginatedIterable<Vehicle>(buildPageFetcher(paginatedService)).toSequence()
 
         val vehicleChunks =
             seq.chunked(150)
@@ -58,19 +58,24 @@ class SequencerTest {
     @Test
     fun `paginates to end if needed`() {
         val dataStore = dataStoreFromResource()
-            .take(400)
+            .take(4000)
             .toList()
-        val seq = Sequencer<Vehicle>(buildPageFetcher(PaginatedService(dataStore))).toSequence()
+        val seq = PaginatedIterable<Vehicle>(buildPageFetcher(PaginatedService(dataStore))).toSequence()
 
         val vehicleChunks =
-            seq.chunked(150)
+            seq.chunked(1500)
                 .take(4)
                 .toList()
 
         assertEquals(3, vehicleChunks.size)
-        assertEquals(150, vehicleChunks[0].size)
-        assertEquals(150, vehicleChunks[1].size)
-        assertEquals(100, vehicleChunks[2].size)
+        assertEquals(1500, vehicleChunks[0].size)
+        assertEquals(1500, vehicleChunks[1].size)
+        assertEquals(1000, vehicleChunks[2].size)
+    }
+
+    @Nested
+    inner class AsIterable {
+
     }
 
     /**
@@ -78,16 +83,16 @@ class SequencerTest {
      * appears to be working with any normal service/accessor/etc returning
      * an iterable or sequence.
      */
-    class TestService() {
-        val ext = PaginatedService()
+    class TestService(val poisonPillVin: String? = null) {
+        val ext = PaginatedService(poisonPillVin = poisonPillVin)
         fun getVehicles(): Sequence<Vehicle> =
-            Sequencer<Vehicle>(PageFetcher<Vehicle> { pageToken ->
+            PaginatedIterable<Vehicle>(PaginatedIterable.Fetcher<Vehicle> { pageToken ->
                 val result = ext.getVehicles(pageToken?.toString())
 
-                SequencePage(result.data, result.nextPageToken as Object)
+                PaginatedIterable.Page(result.data, result.nextPageToken as Object)
             }).toSequence()
     }
-    val service = TestService()
+    val service = TestService("JTMFB3FV6M")
 
     @Nested
     inner class UsageExampleWhenBehindServiceCall {
@@ -169,7 +174,7 @@ class SequencerTest {
         val baseUrl = server.url("/")
         val client = OkHttpClient()
 
-        val webServiceFetcher = PageFetcher<Vehicle> { pageToken ->
+        val webServiceFetcher = PaginatedIterable.Fetcher<Vehicle> { pageToken ->
             val urlBuilder = baseUrl.newBuilder()
                 .addPathSegments("v1/vehicles")
             if (pageToken is String) {
@@ -190,7 +195,7 @@ class SequencerTest {
 
             val nextPageToken = responseBody.nextPageToken?.toString() ?: null
 
-            SequencePage<Vehicle>(
+            PaginatedIterable.Page<Vehicle>(
                 page = responseBody.data,
                 nextPageToken = nextPageToken as Object?,
             )
@@ -203,7 +208,7 @@ class SequencerTest {
 
         @Test
         fun `sample sequencer using web service`() {
-            val vehicles = Sequencer<Vehicle>(webServiceFetcher).toSequence()
+            val vehicles = PaginatedIterable<Vehicle>(webServiceFetcher).toSequence()
 
             val vehicleList = vehicles.take(500).toList()
             assertEquals(500, vehicleList.size)

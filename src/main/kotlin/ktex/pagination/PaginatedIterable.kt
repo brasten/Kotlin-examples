@@ -1,17 +1,12 @@
 package ktex.pagination
 
-data class SequencePage<T>(
-    val page: Iterable<T>,
-    val nextPageToken: Object? = null,
-)
-
-fun interface PageFetcher<T> {
-    fun fetch(pageToken: Object?): SequencePage<T>
-}
-
-class Sequencer<T>(
-    val pageFetcher: PageFetcher<T>,
+/**
+ * Converts a function for retrieving pages of data into an Iterable.
+ */
+class PaginatedIterable<T>(
+    val pageFetcher: Fetcher<T>,
 ) {
+
     fun toSequence(): Sequence<T> {
         var pageToken: Object? = null
 
@@ -27,4 +22,13 @@ class Sequencer<T>(
             } while (pageToken != null)
         }
     }
+
+    fun interface Fetcher<T> {
+        fun fetch(pageToken: Object?): Page<T>
+    }
+
+    data class Page<T>(
+        val page: Iterable<T>,
+        val nextPageToken: Object? = null,
+    )
 }

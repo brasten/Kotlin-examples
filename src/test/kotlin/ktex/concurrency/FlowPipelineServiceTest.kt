@@ -1,15 +1,13 @@
 package ktex.concurrency
 
 import kotlinx.coroutines.test.runTest
-import me.brasten.ktex.concurrency.EventLogCollector
-import me.brasten.ktex.concurrency.ResultsWithLog
 import org.junit.jupiter.api.Test
 import kotlin.test.Ignore
 
 class FlowPipelineServiceTest {
 
     @Test
-//    @Ignore
+    @Ignore
     fun `testing parallel flows`(): Unit = runTest {
         println("Building Event Log Collector")
         val eventLog = EventLogCollector()

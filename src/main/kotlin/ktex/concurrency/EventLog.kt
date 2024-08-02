@@ -1,4 +1,4 @@
-package me.brasten.ktex.concurrency
+package ktex.concurrency
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
